@@ -1,6 +1,7 @@
 from calmodels import *
 from calmetrics import *
 from calutils import *
+from experiment import *
 
 import os
 os.environ['AMPLIGRAPH_DATA_HOME'] = os.path.join(

@@ -3,8 +3,7 @@ Some calibration methods
 '''
 from abc import abstractmethod
 from copy import deepcopy
-from collections.abc import Iterable
-from typing import Protocol
+from typing import Iterable
 
 import numpy as np
 from sklearn.linear_model import LogisticRegression
@@ -30,12 +29,11 @@ class DatasetWrapper:
 # ===============================================================
 
 
-
-class Calibrator(Protocol):
+# from typing import Protocol
+# class Calibrator(Protocol):
+class Calibrator:
     '''
-    The class contains two methods:
-        - fit(probs, true), that should be used with validation data to train the calibration model.
-        - predict(probs), this method is used to calibrate the confidences.
+    Base class for all probability calibration models
     '''
     @abstractmethod
     def fit(self, uncal_probs: Iterable[Iterable[float]], truth: Iterable[int]):
@@ -62,7 +60,7 @@ class Calibrator(Protocol):
         raise NotImplemented
     
 
-class UncalCalibtator:
+class UncalCalibtator(Calibrator):
     def __init__(self):
         self.name = 'UncalCalibtator'       
 
@@ -72,7 +70,7 @@ class UncalCalibtator:
     def predict(self, uncal_probs):
         return uncal_probs
 
-class PlattCalibtator:
+class PlattCalibtator(Calibrator):
     def __init__(self):
         self.name = 'PlattCalibrator'
         self._calibrator = LogisticRegression()  
@@ -86,7 +84,7 @@ class PlattCalibtator:
         uncal_probs = oneD_to_twoD(uncal_probs)
         return self._calibrator.predict_proba(uncal_probs)[:, 1]
     
-class IsotonicCalibrator:
+class IsotonicCalibrator(Calibrator):
     def __init__(self):
         self.name = 'IsotonicCalibrator'
         self._calibrator = IsotonicRegression(y_min=0, y_max=1, out_of_bounds='clip')
@@ -99,7 +97,7 @@ class IsotonicCalibrator:
         return self._calibrator.predict(uncal_probs)
     
 
-class HistogramBinningCalibtator:
+class HistogramBinningCalibtator(Calibrator):
     """
     Histogram Binning as a calibration method. The bins are divided into equal lengths.
     """
@@ -156,7 +154,7 @@ class HistogramBinningCalibtator:
         return probs
     
 
-class BetaCalibtator:
+class BetaCalibtator(Calibrator):
     
     def __init__(self):
         self.name = 'BetaCalibrator'

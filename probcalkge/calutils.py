@@ -2,6 +2,7 @@
 Some utility functions
 '''
 import numpy as np
+from scipy.special import expit
 
 
 
@@ -20,6 +21,20 @@ def sigmoid(z: float):
     sig_val = 1 / (1 + np.exp(-z))
     return sig_val
 
+def expit_probs(x: np.ndarray):
+    '''
+    convert scores into uncalibrated probabilities
+
+    Parameters
+    ----------
+    x (numpy.ndarray): array containing m samples with n-dimensions (m,n)
+    
+    Returns
+    -------
+        uncalibrated probabilities
+    '''
+    return expit(x)
+
 
 def normalise(x: np.ndarray):
     '''
@@ -31,7 +46,7 @@ def normalise(x: np.ndarray):
     
     Returns
     -------
-        a real number within (0, 1)
+        normalised numbers within (0, 1)
     '''
     return x / np.sum(x)
 

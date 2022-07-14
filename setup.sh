@@ -1,9 +1,10 @@
 # /bin/bash
-conda create --name ampligraph python=3.7
-source activate ampligraph
 
-conda install tensorflow'>=1.15.2,<2.0.0'
+mkdir .venv
+pipenv --python 3.7
+pipenv install protobuf==3.20
+pipenv install "tensorflow>=1.15.2,<2.0"
+pipenv install ampligraph
+pipenv install betacal
 
-pip install ampligraph
-pip install betacal
-pip install jupyter
+
