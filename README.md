@@ -5,13 +5,12 @@ Study of Probability Calibration in Knowledge Graph Embedding
 
 **Prerequisites**
 - Python 3.7
-- Pipenv (`pip install pipenv`)
 
 We developed the experimental programs based on [AmpliGraph](https://github.com/Accenture/AmpliGraph/) which requires Python 3.7.
 
-If you have `pipenv` installed, you could run this command to setup the experiemntal environment
+You could run this command to install the required dependencies
 ```shell
-sh setup.sh
+pip install -r requirments.txt
 ```
 
 
