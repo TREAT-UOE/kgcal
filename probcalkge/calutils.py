@@ -15,6 +15,16 @@ def get_cls_name(obj):
     '''
     return obj.__class__.__name__
 
+def get_func_name(func):
+    '''Get the name of the given function
+    
+    Example
+    >>> def hhh():pass
+    >>> get_func_name(hhh)
+    'hhh'
+    '''
+    return func.__name__
+
 def sigmoid(z: float):
     '''
     Sigmoid function

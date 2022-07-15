@@ -2,6 +2,7 @@
 Some calibration methods
 '''
 from abc import abstractmethod
+from collections import namedtuple
 from copy import deepcopy
 from typing import Iterable
 
@@ -11,17 +12,6 @@ from sklearn.isotonic import IsotonicRegression
 from betacal import BetaCalibration
 
 from calutils import oneD_to_twoD
-
-
-class DatasetWrapper:
-    def __init__(self, name, X_train, X_valid, y_valid, X_test, y_test):
-        self.name = name
-        self.X_train = X_train
-        # no y_train, assume all triples im X_train are positive, and generate synthetic negatives
-        self.X_valid = X_valid
-        self.y_valid = y_valid
-        self.X_test = X_test
-        self.y_test = y_test
         
 
 # ===============================================================
@@ -35,6 +25,9 @@ class Calibrator:
     '''
     Base class for all probability calibration models
     '''
+    
+    name: str
+
     @abstractmethod
     def fit(self, uncal_probs: Iterable[Iterable[float]], truth: Iterable[int]):
         """
@@ -166,3 +159,21 @@ class BetaCalibtator(Calibrator):
     
     def predict(self, uncal_probs):
         return self._calibrator.predict(uncal_probs)
+
+
+CalibraionModels = namedtuple('CalibrationModels', [
+    'uncal', 
+    'platt', 
+    'isot', 
+    'histbin', 
+    'beta',
+])
+
+def get_calibrators() -> CalibraionModels:
+    lst = []
+    lst.append(UncalCalibtator())
+    lst.append(PlattCalibtator())
+    lst.append(IsotonicCalibrator())
+    lst.append(HistogramBinningCalibtator())
+    lst.append(BetaCalibtator())
+    return CalibraionModels(*lst)

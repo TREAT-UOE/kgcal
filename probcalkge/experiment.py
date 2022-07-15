@@ -9,7 +9,8 @@ import pandas as pd
 import xarray as xr
 from ampligraph.latent_features import EmbeddingModel
 
-from calmodels import Calibrator, DatasetWrapper
+from calmodels import Calibrator
+from caldatasets import DatasetWrapper
 from calutils import expit_probs, get_cls_name
 
 dict = OrderedDict
@@ -23,6 +24,7 @@ class ExperimentResult:
         Parameters
         ----------
         results: dict of dict of DataFrames
+            Experiment results stored in a dict
         '''
         self.expriment = experiment
         self.results = self._create_xarray(results)
@@ -31,17 +33,18 @@ class ExperimentResult:
         coords = {
             'cal': [get_cls_name(cal) for cal in self.expriment.cals], 
             'kge': [get_cls_name(kge) for kge in self.expriment.kges],
-            'dataset': [get_cls_name(ds) for ds in self.expriment.datasets], 
-            'cal': [get_cls_name(metric) for metric in self.expriment.metrics]
+            'dataset': [ds.name for ds in self.expriment.datasets], 
+            'metric': [metric.__name__ for metric in self.expriment.metrics]
         }
         data = []
         for kge_name, ds_dict in results.items():
-            coords['kge'].append(kge_name)
             frames = []
             for ds_name, frame in ds_dict.items():
-                coords['dataset'].append(ds_name)
                 frames.append(frame.to_numpy())
             data.append(frames)
+
+        print(data)
+        print(coords)
         
         return xr.DataArray(data=data, coords=coords)
 
@@ -79,7 +82,7 @@ class ExperimentResult:
             a DataFrame containing metrics of the given calibration model
             for a KGE model on various datasets
         '''
-        return self.results.sel()
+        return self.results.sel(cal=cal, kge=kge).to_dataframe()
 
 
 
@@ -96,27 +99,27 @@ class Experiment:
     techqnieus for KGE models on different datasets
     '''
     def __init__(self, cals: Iterable[Calibrator],
-                        kegs: Iterable[EmbeddingModel],
+                        kges: Iterable[EmbeddingModel],
                         datasets: Iterable[DatasetWrapper],
                         metrics: Iterable[MetricFunction]):
         self.cals = list(cals)
-        self.kegs = list(kegs)
+        self.kges = list(kges)
         self.datasets = list(datasets)
         self.metrics = list(metrics)
 
 
-        self.trained_kge: dict[str, dict[str, EmbeddingModel]] = {}
+        self.trained_kge = {}
         for ds in self.datasets:
             self.trained_kge[get_cls_name(ds)] = {}
-            for kge in self.kegs:
+            for kge in self.kges:
                 self.trained_kge[get_cls_name(ds)][get_cls_name(kge)] = None
         
-        self.trained_cal: dict[str, dict[str, dict[str, Calibrator]]] = {}
+        self.trained_cal = {}
         for ds in self.datasets:
             self.trained_cal[get_cls_name(ds)] = {}
-            for kge in self.kegs:
+            for kge in self.kges:
                 self.trained_cal[get_cls_name(ds)][get_cls_name(kge)] = {}
-                for cal in self.cal:
+                for cal in self.cals:
                     self.trained_cal[get_cls_name(ds)][get_cls_name(kge)][get_cls_name(cal)] = None
         
 
@@ -128,7 +131,7 @@ class Experiment:
     def add_kgemodel(self, kgemodel: EmbeddingModel):
         '''add an KGE model in this experiment
         '''
-        self.kegs.append(kgemodel)
+        self.kges.append(kgemodel)
 
     def add_dataset(self, dataset: DatasetWrapper):
         '''add a dataset in this experiment
@@ -149,6 +152,7 @@ class Experiment:
             for ds in self.datasets:
                 res[get_cls_name(kge)][get_cls_name(ds)] = \
                     self._train_and_eval(kge, ds)
+        return ExperimentResult(experiment=self, results=res)
 
     def _train_and_eval(self, kge: EmbeddingModel, ds: DatasetWrapper) -> pd.DataFrame:
         '''
