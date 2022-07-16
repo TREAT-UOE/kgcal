@@ -168,7 +168,9 @@ class Experiment:
         from ampligraph.utils import save_model
         for ds, models in self.trained_kges.items():
             for mname, model in models.items():
-                save_model(model, os.path.join(save_dir, f'{ds}-{mname}.pkl'))
+                model_file = os.path.join(save_dir, f'{ds}-{mname}.pkl')
+                save_model(model, model_file)
+                print(f'saved {model_file}.')
 
     def load_trained_kges(self, save_dir: str):
         '''

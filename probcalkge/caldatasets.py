@@ -2,13 +2,16 @@
 '''
 Utilities for loeading datasets
 '''
+import os
 from collections import namedtuple
 
 import numpy as np
-from ampligraph.datasets import load_fb13, load_wn11, load_yago3_10
+from ampligraph.datasets import load_fb13, load_wn11, load_yago3_10, load_cn15k, load_nl27k
 
 
 class DatasetWrapper:
+    '''Adapter to wrap a dataset in order to fit our experiments
+    '''
     def __init__(self, name, X_train, X_valid, y_valid, X_test, y_test):
         self.name = name
         self.X_train = X_train
@@ -35,13 +38,15 @@ def get_wn11() -> DatasetWrapper:
                           tmp['test_labels'].astype(np.int32))
 
 def _load_yago39():
+    yago_path = os.environ['AMPLIGRAPH_DATA_HOME'] + os.sep + 'yago39' + os.sep
     data = {}
-    with open('yago39/train_triple2id.txt', 'r') as f:
+    with open(yago_path + 'train_triple2id.txt', 'r') as f:
         lines = f.readlines()
         data['train'] = np.array([line.strip().split() for line in lines[1:]])
     train_entities = set(data['train'][:, 0]).union(set(data['train'][:, 2]))
     print(len(train_entities))
-    with open('yago39/valid_triple2id_positive.txt', 'r') as f:
+
+    with open(yago_path + 'valid_triple2id_positive.txt', 'r') as f:
         lines = f.readlines()
         tmp = []
         for line in lines[1:]:
@@ -50,7 +55,8 @@ def _load_yago39():
                 tmp.append(triple)
         data['valid'] = np.array(tmp)
         data['valid_labels'] = np.ones(len(tmp))
-    with open('yago39/valid_triple2id_negative.txt', 'r') as f:
+
+    with open(yago_path + 'valid_triple2id_negative.txt', 'r') as f:
         lines = f.readlines()
         tmp = []
         for line in lines[1:]:
@@ -59,7 +65,8 @@ def _load_yago39():
                 tmp.append(triple)
         data['valid'] = np.concatenate([data['valid'], np.array(tmp)])
         data['valid_labels'] = np.concatenate([data['valid_labels'], np.zeros(len(tmp))])
-    with open('yago39/test_triple2id_positive.txt', 'r') as f:
+
+    with open(yago_path + 'test_triple2id_positive.txt', 'r') as f:
         lines = f.readlines()
         tmp = []
         for line in lines[1:]:
@@ -68,7 +75,8 @@ def _load_yago39():
                 tmp.append(triple)
         data['test'] = np.array(tmp)
         data['test_labels'] = np.ones(len(tmp))
-    with open('yago39/test_triple2id_negative.txt', 'r') as f:
+
+    with open(yago_path + 'test_triple2id_negative.txt', 'r') as f:
         lines = f.readlines()
         tmp = []
         for line in lines[1:]:
@@ -81,14 +89,16 @@ def _load_yago39():
     test_entities = set(data['test'][:, 0]).union(set(data['test'][:, 2]))
     print(len(valid_entities - train_entities))
     print(len(test_entities - train_entities))
+
     return data
+
 
 def get_yago39() -> DatasetWrapper:
     tmp = _load_yago39()
-    return DatasetWrapper('YAGO39', tmp['train'], 
-                          tmp['valid'], 
+    return DatasetWrapper('YAGO39', tmp['train'].astype(np.int32), 
+                          tmp['valid'].astype(np.int32), 
                           tmp['valid_labels'].astype(np.int32), 
-                          tmp['test'], 
+                          tmp['test'].astype(np.int32), 
                           tmp['test_labels'].astype(np.int32))
 
 

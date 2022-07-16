@@ -9,7 +9,9 @@ from ampligraph.latent_features import (
     TransE, 
     ComplEx, 
     HolE, 
-    DistMult
+    DistMult,
+    ConvE,
+    ConvKB,
     )
 
 
@@ -20,6 +22,8 @@ KGEModels = namedtuple('KGEModels', [
     'complEx',
     'distMult',
     'hoLE',
+    'convKB',
+    'convE',
 ])
 
 def get_kgemodels() -> KGEModels:
@@ -29,4 +33,6 @@ def get_kgemodels() -> KGEModels:
     lst.append(ComplEx(verbose=True))
     lst.append(DistMult(verbose=True))
     lst.append(HolE(verbose=True))
+    lst.append(ConvKB(verbose=True))
+    lst.append(ConvE(verbose=True))
     return KGEModels(*lst)
