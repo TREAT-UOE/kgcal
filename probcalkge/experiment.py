@@ -50,10 +50,10 @@ class ExperimentResult:
 
     def print_summary(self):
         summary = f'''
-        calibration techniques: ${[get_cls_name(cal) for cal in self.expriment.cals]}
-        KGE models: ${[get_cls_name(kge) for kge in self.expriment.kges]}
-        datasets: ${[get_cls_name(ds) for ds in self.expriment.datasets]}
-        metrics: ${[get_cls_name(metric) for metric in self.expriment.metrics]}
+        calibration techniques: {[get_cls_name(cal) for cal in self.expriment.cals]}
+        KGE models: {[get_cls_name(kge) for kge in self.expriment.kges]}
+        datasets: {[ds.name for ds in self.expriment.datasets]}
+        metrics: {[get_cls_name(metric) for metric in self.expriment.metrics]}
         '''
         print(summary)
 
@@ -110,17 +110,17 @@ class Experiment:
 
         self.trained_kge = {}
         for ds in self.datasets:
-            self.trained_kge[get_cls_name(ds)] = {}
+            self.trained_kge[ds.name] = {}
             for kge in self.kges:
-                self.trained_kge[get_cls_name(ds)][get_cls_name(kge)] = None
+                self.trained_kge[ds.name][get_cls_name(kge)] = None
         
         self.trained_cal = {}
         for ds in self.datasets:
-            self.trained_cal[get_cls_name(ds)] = {}
+            self.trained_cal[ds.name] = {}
             for kge in self.kges:
-                self.trained_cal[get_cls_name(ds)][get_cls_name(kge)] = {}
+                self.trained_cal[ds.name][get_cls_name(kge)] = {}
                 for cal in self.cals:
-                    self.trained_cal[get_cls_name(ds)][get_cls_name(kge)][get_cls_name(cal)] = None
+                    self.trained_cal[ds.name][get_cls_name(kge)][get_cls_name(cal)] = None
         
 
     def add_calmodel(self, calmodel: Calibrator):
@@ -150,8 +150,9 @@ class Experiment:
         for kge in self.kges:
             res[get_cls_name(kge)] = {}
             for ds in self.datasets:
-                res[get_cls_name(kge)][get_cls_name(ds)] = \
+                res[get_cls_name(kge)][ds.name] = \
                     self._train_and_eval(kge, ds)
+        print(res)
         return ExperimentResult(experiment=self, results=res)
 
     def _train_and_eval(self, kge: EmbeddingModel, ds: DatasetWrapper) -> pd.DataFrame:
@@ -160,7 +161,7 @@ class Experiment:
         train and evaluate all calibration models,
         and measure the performance using all metrics
         '''
-        cals_metrics = {}
+        print(f'training {get_cls_name(kge)} on {ds.name} ...')
 
         # make a brand new (untrained) kge models
         new_kge = deepcopy(kge)
@@ -169,22 +170,25 @@ class Experiment:
         uncal_prob_valid = expit_probs(new_kge.predict(ds.X_valid))
         uncal_prob_test = expit_probs(new_kge.predict(ds.X_test))
 
-        self.trained_kge[get_cls_name(ds)][get_cls_name(kge)] = new_kge
+        self.trained_kge[ds.name][get_cls_name(kge)] = new_kge
 
+        cals_metrics = {}
         for cal in self.cals:
             # make a brand new (untrained) cal models
             new_cal = deepcopy(cal)
             new_cal.fit(uncal_prob_valid, ds.y_valid)
             cal_prob_test = new_cal.predict(uncal_prob_test)
 
-            self.trained_kge[get_cls_name(ds)][get_cls_name(kge)][get_cls_name(cal)] = new_cal
+            self.trained_cal[ds.name][get_cls_name(kge)][get_cls_name(cal)] = new_cal
 
             cells = {}
             for metric in self.metrics:
                 cells[metric.__name__] = metric(ds.y_test, cal_prob_test)
             cals_metrics[get_cls_name(cal)] = pd.Series(cells)
 
-        return pd.DataFrame(data=cals_metrics)
+        df = pd.DataFrame(data=cals_metrics)
+        print(df)
+        return df
             
 
 
