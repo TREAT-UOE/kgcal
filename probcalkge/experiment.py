@@ -1,8 +1,10 @@
 '''
 
 '''
+import os
 from collections import OrderedDict
 from copy import deepcopy
+from pprint import pprint
 from typing import Callable, Iterable
 
 import pandas as pd
@@ -17,43 +19,47 @@ dict = OrderedDict
 
 class ExperimentResult:
     '''
-    results for each metric of each calibrator of each dataset of each KGE
+    results for each metric of each calibrator of each KGE of each dataset
     '''
     def __init__(self, experiment: 'Experiment', results) -> None:
         '''
         Parameters
         ----------
         results: dict of dict of DataFrames
-            Experiment results stored in a dict
+            Experiment results stored in a dict[dataset, dict[kge, dataframe]]
+            column and row(index) of the dataframe is cal and metric 
         '''
         self.expriment = experiment
         self.results = self._create_xarray(results)
 
     def _create_xarray(self, results: dict) ->xr.DataArray:
+        print(results)
+
+        dims = ['dataset', 'kge', 'cal', 'metric']
         coords = {
-            'cal': [get_cls_name(cal) for cal in self.expriment.cals], 
+            'dataset': [ds.name for ds in self.expriment.datasets],
             'kge': [get_cls_name(kge) for kge in self.expriment.kges],
-            'dataset': [ds.name for ds in self.expriment.datasets], 
+            'cal': [get_cls_name(cal) for cal in self.expriment.cals], 
             'metric': [metric.__name__ for metric in self.expriment.metrics]
         }
         data = []
         for kge_name, ds_dict in results.items():
             frames = []
             for ds_name, frame in ds_dict.items():
-                frames.append(frame.to_numpy())
+                frames.append(frame.to_numpy().T)
             data.append(frames)
 
         print(data)
         print(coords)
         
-        return xr.DataArray(data=data, coords=coords)
+        return xr.DataArray(data=data, coords=coords, dims=dims, name='ExpRes')
 
     def print_summary(self):
         summary = f'''
         calibration techniques: {[get_cls_name(cal) for cal in self.expriment.cals]}
         KGE models: {[get_cls_name(kge) for kge in self.expriment.kges]}
         datasets: {[ds.name for ds in self.expriment.datasets]}
-        metrics: {[get_cls_name(metric) for metric in self.expriment.metrics]}
+        metrics: {[metric.__name__ for metric in self.expriment.metrics]}
         '''
         print(summary)
 
@@ -68,6 +74,11 @@ class ExperimentResult:
         '''Return the result as a multi-indexed DataFrame
         '''
         return self.results.to_dataframe()
+    
+    def report_html_file(self, filename='report.html'):
+        html_content = self.to_frame().to_html()
+        with open(filename, 'w') as f:
+            f.write(html_content)
 
     def slice(self, cal: str, kge: str) -> pd.DataFrame:
         '''Return a 2-D dataframe given a calibration model and a KGE model
@@ -82,7 +93,9 @@ class ExperimentResult:
             a DataFrame containing metrics of the given calibration model
             for a KGE model on various datasets
         '''
-        return self.results.sel(cal=cal, kge=kge).to_dataframe()
+        return self.results.sel(cal=cal, kge=kge)\
+                        .to_dataframe()\
+                        .pivot_table(columns='dataset', index='metric', values='ExpRes')
 
 
 
@@ -107,20 +120,19 @@ class Experiment:
         self.datasets = list(datasets)
         self.metrics = list(metrics)
 
-
-        self.trained_kge = {}
+        self.trained_kges = {}
         for ds in self.datasets:
-            self.trained_kge[ds.name] = {}
+            self.trained_kges[ds.name] = {}
             for kge in self.kges:
-                self.trained_kge[ds.name][get_cls_name(kge)] = None
+                self.trained_kges[ds.name][get_cls_name(kge)] = None
         
-        self.trained_cal = {}
+        self.trained_cals = {}
         for ds in self.datasets:
-            self.trained_cal[ds.name] = {}
+            self.trained_cals[ds.name] = {}
             for kge in self.kges:
-                self.trained_cal[ds.name][get_cls_name(kge)] = {}
+                self.trained_cals[ds.name][get_cls_name(kge)] = {}
                 for cal in self.cals:
-                    self.trained_cal[ds.name][get_cls_name(kge)][get_cls_name(cal)] = None
+                    self.trained_cals[ds.name][get_cls_name(kge)][get_cls_name(cal)] = None
         
 
     def add_calmodel(self, calmodel: Calibrator):
@@ -143,43 +155,76 @@ class Experiment:
         '''
         self.metrics.append(MetricFunction)
 
-    def run(self) -> ExperimentResult:
-        '''run this experiment and return experiment results
+    def save_trained_kges(self, save_dir: str):
         '''
-        res = {}
-        for kge in self.kges:
-            res[get_cls_name(kge)] = {}
-            for ds in self.datasets:
-                res[get_cls_name(kge)][ds.name] = \
-                    self._train_and_eval(kge, ds)
-        print(res)
-        return ExperimentResult(experiment=self, results=res)
+        Save trained KGE models to a given directory,
+        model names follow such a format '{dataset}-{KGE name}.pkl',
+        such as 'FB13k-TransE.pkl' 
+        '''
+        if not os.path.exists(save_dir):
+            os.makedirs(save_dir)
+            print('made model directory:', save_dir)
 
-    def _train_and_eval(self, kge: EmbeddingModel, ds: DatasetWrapper) -> pd.DataFrame:
+        from ampligraph.utils import save_model
+        for ds, models in self.trained_kges.items():
+            for mname, model in models.items():
+                save_model(model, os.path.join(save_dir, f'{ds}-{mname}.pkl'))
+
+    def load_trained_kges(self, save_dir: str):
         '''
-        train one one KGE model on one datasets, then
-        train and evaluate all calibration models,
-        and measure the performance using all metrics
+        Load trained KGE models from a given directory,
+
+        Requires
+        --------
+        Model files should be produced by the `self.save_trained_kge` method
+        '''
+        from ampligraph.utils import restore_model
+        import re
+        fname_pat = re.compile('(.*?)-(.*?)\.pkl')
+        for fname in os.listdir(save_dir):
+            if fname_pat.match(fname):
+                dsname, kgename =  fname_pat.findall(fname)[0]
+                self.trained_kges.setdefault(dsname, dict())
+                self.trained_kges[dsname][kgename] = restore_model(os.path.join(save_dir, fname))
+        print('Loaded models:')
+        pprint(self.trained_kges)
+
+        
+    def train_kges(self):
+        '''train all KGE models on all datasets
+        '''
+        for kge in self.kges:
+            for ds in self.datasets:
+                trained_kge = self._train_kge(kge, ds)
+                self.trained_kges[ds.name][get_cls_name(kge)] = trained_kge
+
+    def _train_kge(self, kge: EmbeddingModel, ds: DatasetWrapper) -> EmbeddingModel:
+        '''train one KGE model on one dataset
         '''
         print(f'training {get_cls_name(kge)} on {ds.name} ...')
-
-        # make a brand new (untrained) kge models
-        new_kge = deepcopy(kge)
-
+        new_kge = deepcopy(kge)  # make a brand new (untrained) kge models
         new_kge.fit(ds.X_train)
-        uncal_prob_valid = expit_probs(new_kge.predict(ds.X_valid))
-        uncal_prob_test = expit_probs(new_kge.predict(ds.X_test))
+        new_kge._is_trained = True
+        return new_kge
 
-        self.trained_kge[ds.name][get_cls_name(kge)] = new_kge
+    def _train_cal_and_eval(self, trained_kge: EmbeddingModel, 
+                                ds: DatasetWrapper) -> pd.DataFrame:
+        '''
+        train and evaluate all calibration models for one KGE on one dataset,
+        and measure the performance using all metrics
+        '''
+        # assert(trained_kge._is_trained, 'KGE model not trained!')
+
+        uncal_prob_valid = expit_probs(trained_kge.predict(ds.X_valid))
+        uncal_prob_test = expit_probs(trained_kge.predict(ds.X_test))
 
         cals_metrics = {}
         for cal in self.cals:
-            # make a brand new (untrained) cal models
-            new_cal = deepcopy(cal)
+            new_cal = deepcopy(cal) # make a brand new (untrained) cal models
             new_cal.fit(uncal_prob_valid, ds.y_valid)
             cal_prob_test = new_cal.predict(uncal_prob_test)
 
-            self.trained_cal[ds.name][get_cls_name(kge)][get_cls_name(cal)] = new_cal
+            self.trained_cals[ds.name][get_cls_name(trained_kge)][get_cls_name(cal)] = new_cal
 
             cells = {}
             for metric in self.metrics:
@@ -187,10 +232,35 @@ class Experiment:
             cals_metrics[get_cls_name(cal)] = pd.Series(cells)
 
         df = pd.DataFrame(data=cals_metrics)
-        print(df)
+        # print(df)
         return df
             
 
+    def run_with_trained_kges(self) -> ExperimentResult:
+        '''run this experiments with all trained KGE models on all datasets
+        '''
+        res = {}
+        for ds in self.datasets:
+            res[ds.name] = {}
+            for kgename, kgemodel in self.trained_kges[ds.name].items():
+                res[ds.name][kgename] = self._train_cal_and_eval(kgemodel, ds)
+        print(res)
+        return ExperimentResult(experiment=self, results=res)
+        
+    def run(self) -> ExperimentResult:
+        '''run this experiment
+        '''
+        self.train_kges()
+        return self.run_with_trained_kges()
+
+
+
+
+
+if __name__ == '__main__':
+    exp = Experiment([],[],[],[])
+    exp.load_trained_kges('../saved_models/07-16_15-18-09')
+    print(exp.trained_kge)
 
 
 
