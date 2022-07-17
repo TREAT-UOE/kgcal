@@ -44,7 +44,7 @@ def _load_yago39():
         lines = f.readlines()
         data['train'] = np.array([line.strip().split() for line in lines[1:]])
     train_entities = set(data['train'][:, 0]).union(set(data['train'][:, 2]))
-    print(len(train_entities))
+    # print(len(train_entities))
 
     with open(yago_path + 'valid_triple2id_positive.txt', 'r') as f:
         lines = f.readlines()
@@ -87,8 +87,6 @@ def _load_yago39():
         data['test_labels'] = np.concatenate([data['test_labels'], np.zeros(len(tmp))])
     valid_entities = set(data['valid'][:, 0]).union(set(data['valid'][:, 2]))
     test_entities = set(data['test'][:, 0]).union(set(data['test'][:, 2]))
-    print(len(valid_entities - train_entities))
-    print(len(test_entities - train_entities))
 
     return data
 
