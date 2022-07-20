@@ -1,13 +1,22 @@
 
 '''
-Utilities for loeading datasets
+Utilities for loading datasets
 '''
 import os
 from collections import namedtuple
+from typing import Dict
 
 import numpy as np
-from ampligraph.datasets import load_fb13, load_wn11, load_yago3_10, load_cn15k, load_nl27k
+import tensorflow as tf
+from ampligraph.datasets import load_fb13, load_wn11
+from ampligraph.evaluation import (generate_corruptions_for_fit,    
+                                    generate_corruptions_for_eval)
 
+ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
+if not os.environ.get('AMPLIGRAPH_DATA_HOME'):
+    os.environ['AMPLIGRAPH_DATA_HOME'] = os.path.join(
+        ROOT_DIR, 'ampligraph_datasets'
+    )
 
 class DatasetWrapper:
     '''Adapter to wrap a dataset in order to fit our experiments
@@ -29,6 +38,7 @@ def get_fb13() -> DatasetWrapper:
                           tmp['test'], 
                           tmp['test_labels'].astype(np.int32))
 
+
 def get_wn11() -> DatasetWrapper:
     tmp = load_wn11()
     return DatasetWrapper('WN11', tmp['train'], 
@@ -36,6 +46,7 @@ def get_wn11() -> DatasetWrapper:
                           tmp['valid_labels'].astype(np.int32), 
                           tmp['test'], 
                           tmp['test_labels'].astype(np.int32))
+
 
 def _load_yago39():
     yago_path = os.environ['AMPLIGRAPH_DATA_HOME'] + os.sep + 'yago39' + os.sep
@@ -85,8 +96,6 @@ def _load_yago39():
                 tmp.append(triple)
         data['test'] = np.concatenate([data['test'], np.array(tmp)])
         data['test_labels'] = np.concatenate([data['test_labels'], np.zeros(len(tmp))])
-    valid_entities = set(data['valid'][:, 0]).union(set(data['valid'][:, 2]))
-    test_entities = set(data['test'][:, 0]).union(set(data['test'][:, 2]))
 
     return data
 
@@ -100,10 +109,130 @@ def get_yago39() -> DatasetWrapper:
                           tmp['test_labels'].astype(np.int32))
 
 
+def load_dataset(dirpath: str) -> Dict[str, np.ndarray]:
+    '''Load a dataset from a directory
+
+    Requires
+    --------
+    The directory should have these files:
+    - train.txt
+    - valid.txt
+    - test.txt
+    - entity2id.txt
+    - relation2id.txt
+
+    Returns
+    -------
+    a dict with 5 keys: 
+        dict_keys(['train', 'valid', 'test', 'valid_labels', 'test_labels'])
+    '''
+    e2id = {}
+    with open(os.path.join(dirpath, 'entity2id.txt'), 'r', encoding='utf8') as f:
+        for line in f:
+            ent, eid = line.split()
+            e2id[ent] = int(eid)
+    r2id = {}
+    with open(os.path.join(dirpath, 'relation2id.txt'), 'r', encoding='utf8') as f:
+        for line in f:
+            rel, rid = line.split()
+            r2id[rel] = int(rid)
+
+    def _load_dataset(filepath: str) -> np.ndarray:
+        '''load data from xxx.txt'''
+        trps = []
+        with open(filepath, 'r', encoding='utf8') as f:
+            for line in f:
+                s, p, o = line.split()
+                # print(s, p, o)
+                if (s in e2id) and (p in r2id) and (o in e2id):
+                    trp = [e2id[s], r2id[p], e2id[o]]
+                    trps.append(trp)
+        return np.array(trps).astype(np.int32)
+
+    train = _load_dataset(os.path.join(dirpath, 'train.txt'))
+    tmp_valid = _load_dataset(os.path.join(dirpath, 'valid.txt'))
+    tmp_test = _load_dataset(os.path.join(dirpath, 'test.txt'))
+    
+    # filter out unseen ents and rels in valid and test (w.r.t. train)
+    train_ents = set(train[:, 0]).union(set(train[:, 2]))
+    train_rels = set(train[:, 1])
+    valid = []
+    for trp in tmp_valid:
+        if trp[0] in train_ents and trp[1] in train_rels and trp[2] in train_ents:
+            valid.append(trp)
+    valid = np.array(valid)
+    test = []
+    for trp in tmp_test:
+        if trp[0] in train_ents and trp[1] in train_rels and trp[2] in train_ents:
+            test.append(trp)
+    test = np.array(test)
+
+    # positive labels
+    valid_labels = np.ones(len(valid))
+    test_labels = np.ones(len(test))
+
+    # generate negative triples and the corresponding labels
+    valid_neg = generate_corruptions_for_fit(valid).eval(session=tf.Session())
+    valid = np.hstack([valid, valid_neg])
+    test_neg = generate_corruptions_for_fit(test).eval(session=tf.Session())
+    test = np.hstack([test, test_neg])
+    valid_labels = np.concatenate([valid_labels, np.zeros(len(valid_labels))])
+    test_labels = np.concatenate([test_labels, np.zeros(len(test_labels))])
+
+    return {
+        'train': train,
+        'valid': valid,
+        'test': test,
+        'valid_labels': valid_labels,
+        'test_labels': test_labels
+    }
+
+
+def get_dp50():
+    dp50_path = os.environ['AMPLIGRAPH_DATA_HOME'] + os.sep + 'DBpedia50' + os.sep
+    tmp = load_dataset(dp50_path)
+    return DatasetWrapper('DBpedia50', tmp['train'].astype(np.int32), 
+                          tmp['valid'].astype(np.int32), 
+                          tmp['valid_labels'].astype(np.int32), 
+                          tmp['test'].astype(np.int32), 
+                          tmp['test_labels'].astype(np.int32))
+
+def get_umls():
+    umls_path = os.environ['AMPLIGRAPH_DATA_HOME'] + os.sep + 'UMLS' + os.sep
+    tmp = load_dataset(umls_path)
+    return DatasetWrapper('UMLS', tmp['train'].astype(np.int32), 
+                          tmp['valid'].astype(np.int32), 
+                          tmp['valid_labels'].astype(np.int32), 
+                          tmp['test'].astype(np.int32), 
+                          tmp['test_labels'].astype(np.int32))
+
+def get_kinship():
+    kinship_path = os.environ['AMPLIGRAPH_DATA_HOME'] + os.sep + 'KinShip' + os.sep
+    tmp = load_dataset(kinship_path)
+    return DatasetWrapper('KinShip', tmp['train'].astype(np.int32), 
+                          tmp['valid'].astype(np.int32), 
+                          tmp['valid_labels'].astype(np.int32), 
+                          tmp['test'].astype(np.int32), 
+                          tmp['test_labels'].astype(np.int32))
+
+def get_nations():
+    nations_path = os.environ['AMPLIGRAPH_DATA_HOME'] + os.sep + 'Nations' + os.sep
+    tmp = load_dataset(nations_path)
+    return DatasetWrapper('Nations', tmp['train'].astype(np.int32), 
+                          tmp['valid'].astype(np.int32), 
+                          tmp['valid_labels'].astype(np.int32), 
+                          tmp['test'].astype(np.int32), 
+                          tmp['test_labels'].astype(np.int32))
+
+
 ExperimentDatasets = namedtuple('Datasets', [
     'fb13', 
     'wn18', 
     'yago39',
+    'dp50',
+    'umls',
+    'kinship',
+    'nations',
 ])
 
 def get_datasets() -> ExperimentDatasets:
@@ -111,4 +240,15 @@ def get_datasets() -> ExperimentDatasets:
     lst.append(get_fb13())
     lst.append(get_wn11())
     lst.append(get_yago39())
+    lst.append(get_dp50())
+    lst.append(get_umls())
+    lst.append(get_kinship())
+    lst.append(get_nations())
     return ExperimentDatasets(*lst)
+
+if __name__ == '__main__':
+    get_dp50()
+    get_umls()
+    get_kinship()
+    get_nations()
+    
