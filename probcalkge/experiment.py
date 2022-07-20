@@ -33,7 +33,7 @@ class ExperimentResult:
         self.results = self._create_xarray(results)
 
     def _create_xarray(self, results: dict) ->xr.DataArray:
-        print(results)
+        # print(results)
 
         dims = ['dataset', 'kge', 'cal', 'metric']
         coords = {
@@ -49,8 +49,8 @@ class ExperimentResult:
                 frames.append(frame.to_numpy().T)
             data.append(frames)
 
-        print(data)
-        print(coords)
+        # print(data)
+        # print(coords)
         
         return xr.DataArray(data=data, coords=coords, dims=dims, name='ExpRes')
 
