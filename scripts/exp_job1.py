@@ -24,8 +24,9 @@ kges = get_kgemodels()
 exp = Experiment(
     cals=[cals.uncal, cals.platt, cals.isot, cals.histbin, cals.beta], 
     # datasets=[ds.fb13, ds.wn18, ds.yago39, ds.dp50, ds.umls, ds.kinship, ds.nations], 
-    datasets=[ds.fb13, ds.wn18, ds.yago39], 
-    kges=[kges.transE, kges.complEx, kges.distMult, kges.hoLE, kges.convKB, kges.convE], 
+    datasets=[ds.dp50, ds.umls, ds.kinship, ds.nations], 
+    # kges=[kges.transE, kges.complEx, kges.distMult, kges.hoLE, kges.convKB, kges.convE], 
+    kges=[kges.transE, kges.complEx], 
     metrics=[brier_score, negative_log_loss, ks_error]
     )
 

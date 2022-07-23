@@ -173,9 +173,9 @@ def load_dataset(dirpath: str) -> Dict[str, np.ndarray]:
 
     # generate negative triples and the corresponding labels
     valid_neg = generate_corruptions_for_fit(valid).eval(session=tf.Session())
-    valid = np.hstack([valid, valid_neg])
+    valid = np.vstack([valid, valid_neg])
     test_neg = generate_corruptions_for_fit(test).eval(session=tf.Session())
-    test = np.hstack([test, test_neg])
+    test = np.vstack([test, test_neg])
     valid_labels = np.concatenate([valid_labels, np.zeros(len(valid_labels))])
     test_labels = np.concatenate([test_labels, np.zeros(len(test_labels))])
 
@@ -207,9 +207,9 @@ def get_umls():
                           tmp['test_labels'].astype(np.int32))
 
 def get_kinship():
-    kinship_path = os.environ['AMPLIGRAPH_DATA_HOME'] + os.sep + 'KinShip' + os.sep
+    kinship_path = os.environ['AMPLIGRAPH_DATA_HOME'] + os.sep + 'Kinship' + os.sep
     tmp = load_dataset(kinship_path)
-    return DatasetWrapper('KinShip', tmp['train'].astype(np.int32), 
+    return DatasetWrapper('Kinship', tmp['train'].astype(np.int32), 
                           tmp['valid'].astype(np.int32), 
                           tmp['valid_labels'].astype(np.int32), 
                           tmp['test'].astype(np.int32), 

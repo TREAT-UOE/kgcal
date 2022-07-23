@@ -262,7 +262,7 @@ class Experiment:
 if __name__ == '__main__':
     exp = Experiment([],[],[],[])
     exp.load_trained_kges('../saved_models/07-16_15-18-09')
-    print(exp.trained_kge)
+    print(exp.trained_kges)
 
 
 
