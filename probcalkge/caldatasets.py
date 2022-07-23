@@ -29,6 +29,11 @@ class DatasetWrapper:
         self.X_test = X_test
         self.y_test = y_test
 
+    @property
+    def stats(self) -> str:
+        '''Return number of train/valid/test'''
+        return len(self.X_train), len(self.X_valid), len(self.X_test)
+
 
 def get_fb13() -> DatasetWrapper:
     tmp = load_fb13()
