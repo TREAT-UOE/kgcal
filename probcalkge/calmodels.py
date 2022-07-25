@@ -10,6 +10,8 @@ import numpy as np
 from sklearn.linear_model import LogisticRegression
 from sklearn.isotonic import IsotonicRegression
 from betacal import BetaCalibration
+from netcal.scaling import TemperatureScaling
+from netcal.binning import ENIR
 
 from calutils import oneD_to_twoD
         
@@ -53,9 +55,9 @@ class Calibrator:
         raise NotImplemented
     
 
-class UncalCalibtator(Calibrator):
+class UncalCalibrator(Calibrator):
     def __init__(self):
-        self.name = 'UncalCalibtator'       
+        self.name = 'UncalCalibrator'       
 
     def fit(self, uncal_probs, y):
         pass
@@ -63,7 +65,7 @@ class UncalCalibtator(Calibrator):
     def predict(self, uncal_probs):
         return uncal_probs
 
-class PlattCalibtator(Calibrator):
+class PlattCalibrator(Calibrator):
     def __init__(self):
         self.name = 'PlattCalibrator'
         self._calibrator = LogisticRegression()  
@@ -90,7 +92,7 @@ class IsotonicCalibrator(Calibrator):
         return self._calibrator.predict(uncal_probs)
     
 
-class HistogramBinningCalibtator(Calibrator):
+class HistogramBinningCalibrator(Calibrator):
     """
     Histogram Binning as a calibration method. The bins are divided into equal lengths.
     """
@@ -99,7 +101,7 @@ class HistogramBinningCalibtator(Calibrator):
         """
         M (int): the number of equal-length bins used
         """
-        self.name = 'HistogramBinningCalibtator'
+        self.name = 'HistogramBinningCalibrator'
         self.bin_size = 1./M  # Calculate bin size
         self.conf = []  # Initiate confidence list
         self.upper_bounds = np.arange(self.bin_size, 1+self.bin_size, self.bin_size)  # Set bin bounds for intervals
@@ -147,7 +149,7 @@ class HistogramBinningCalibtator(Calibrator):
         return probs
     
 
-class BetaCalibtator(Calibrator):
+class BetaCalibrator(Calibrator):
     
     def __init__(self):
         self.name = 'BetaCalibrator'
@@ -161,19 +163,51 @@ class BetaCalibtator(Calibrator):
         return self._calibrator.predict(uncal_probs)
 
 
+class TemperatureCalibrator(Calibrator):
+
+    def __init__(self) -> None:
+        self.name = 'TemperatureCalibrator'
+        self._calibrator = TemperatureScaling()
+    
+    def fit(self, uncal_probs, y):
+        self._calibrator.fit(np.array(uncal_probs), np.array(y))
+        return self
+
+    def predict(self, uncal_probs):
+        return self._calibrator.predict(np.array(uncal_probs))
+
+
+class ENIRCalibrator(Calibrator):
+
+    def __init__(self) -> None:
+        self.name = 'ENIRCalibrator'
+        self._calibrator = ENIR()
+    
+    def fit(self, uncal_probs, y):
+        self._calibrator.fit(np.array(uncal_probs), np.array(y))
+        return self
+
+    def predict(self, uncal_probs):
+        return self._calibrator.predict(np.array(uncal_probs))
+
+
 CalibraionModels = namedtuple('CalibrationModels', [
     'uncal', 
     'platt', 
     'isot', 
     'histbin', 
     'beta',
+    'temperature',
+    'enir',
 ])
 
 def get_calibrators() -> CalibraionModels:
     lst = []
-    lst.append(UncalCalibtator())
-    lst.append(PlattCalibtator())
+    lst.append(UncalCalibrator())
+    lst.append(PlattCalibrator())
     lst.append(IsotonicCalibrator())
-    lst.append(HistogramBinningCalibtator())
-    lst.append(BetaCalibtator())
+    lst.append(HistogramBinningCalibrator())
+    lst.append(BetaCalibrator())
+    lst.append(TemperatureCalibrator())
+    lst.append(ENIRCalibrator())
     return CalibraionModels(*lst)

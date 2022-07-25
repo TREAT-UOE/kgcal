@@ -5,18 +5,19 @@ from collections.abc import Iterable
 import numpy as np
 
 from sklearn.metrics import brier_score_loss, log_loss
+from netcal.metrics import ECE
 
-def brier_score(y_true, y_prob, sample_weight=None, pos_label=None):
+def brier_score(y_true, y_prob, sample_weight=None, pos_label=None) -> float:
     '''Brier score'''
     return brier_score_loss(y_true, y_prob, 
             sample_weight=sample_weight, pos_label=pos_label)
 
-def negative_log_loss(y_true, y_prob, **kwargs):
+def negative_log_loss(y_true, y_prob, **kwargs) -> float:
     '''Negative Log Loss'''
     eps = kwargs.get('eps') if 'eps' in kwargs else 1e-7
     return log_loss(y_true, y_prob, eps=eps)
 
-def ks_error(y_true, y_prob):
+def ks_error(y_true, y_prob) -> float:
     '''Kolmogorov-Smirnov Calibration Error'''
     order = np.argsort(y_prob)
     probs = y_prob[order]
@@ -30,3 +31,7 @@ def ks_error(y_true, y_prob):
     KS_error_max = np.amax(np.absolute(cumulative_forecast - cumulative_actual))
     return KS_error_max
 
+def ece(y_true, y_prob) -> float:
+    '''Kolmogorov-Smirnov Calibration Error'''
+    ece = ECE()
+    return ece.measure(y_prob, y_true)
