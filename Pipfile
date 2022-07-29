@@ -11,6 +11,7 @@ betacal = "*"
 jupyter = "*"
 xarray = "*"
 pandas = "*"
+netcal = "*"
 
 [dev-packages]
 
