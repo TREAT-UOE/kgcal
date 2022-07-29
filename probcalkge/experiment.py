@@ -7,6 +7,7 @@ from copy import deepcopy
 from pprint import pprint
 from typing import Callable, Iterable
 
+import numpy as np
 import pandas as pd
 import xarray as xr
 from ampligraph.latent_features import EmbeddingModel
@@ -215,9 +216,14 @@ class Experiment:
         train and evaluate all calibration models for one KGE on one dataset,
         and measure the performance using all metrics
         '''
-        # assert(trained_kge._is_trained, 'KGE model not trained!')
+        print(f'training various calibrators for {get_cls_name(trained_kge)} on {ds.name} ...')
 
         uncal_prob_valid = expit_probs(trained_kge.predict(ds.X_valid))
+        print(np.all(np.array(uncal_prob_valid)>0) and np.all(np.array(uncal_prob_valid)<1))
+        if not np.all(np.array(uncal_prob_valid)>0) and np.all(np.array(uncal_prob_valid)<1):
+            print(uncal_prob_valid[uncal_prob_valid <= 0])
+            print(uncal_prob_valid[uncal_prob_valid >= 1])
+
         uncal_prob_test = expit_probs(trained_kge.predict(ds.X_test))
 
         cals_metrics = {}

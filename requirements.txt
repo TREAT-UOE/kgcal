@@ -5,3 +5,4 @@ betacal
 jupyter
 xarray
 pandas
+netcal

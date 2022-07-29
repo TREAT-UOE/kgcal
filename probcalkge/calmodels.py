@@ -174,7 +174,7 @@ class TemperatureCalibrator(Calibrator):
         return self
 
     def predict(self, uncal_probs):
-        return self._calibrator.predict(np.array(uncal_probs))
+        return self._calibrator.transform(np.array(uncal_probs))
 
 
 class ENIRCalibrator(Calibrator):
@@ -188,7 +188,9 @@ class ENIRCalibrator(Calibrator):
         return self
 
     def predict(self, uncal_probs):
-        return self._calibrator.predict(np.array(uncal_probs))
+        ps = self._calibrator.transform(np.array(uncal_probs))
+        
+        return ps
 
 
 CalibraionModels = namedtuple('CalibrationModels', [
