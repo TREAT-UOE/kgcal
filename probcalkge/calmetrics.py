@@ -5,6 +5,7 @@ from collections.abc import Iterable
 import numpy as np
 
 from sklearn.metrics import brier_score_loss, log_loss
+from sklearn.calibration import calibration_curve
 from netcal.metrics import ECE
 
 def brier_score(y_true, y_prob, sample_weight=None, pos_label=None) -> float:
@@ -35,3 +36,7 @@ def ece(y_true, y_prob) -> float:
     '''Kolmogorov-Smirnov Calibration Error'''
     ece = ECE()
     return ece.measure(y_prob, y_true)
+
+def cal_curve(y_true, y_prob, n_bins=5):
+    '''Plot a calibration curve'''
+    calibration_curve(y_true, y_prob, n_bins=n_bins)
