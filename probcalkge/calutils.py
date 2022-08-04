@@ -1,6 +1,7 @@
 '''
 Some utility functions
 '''
+
 import numpy as np
 from scipy.special import expit
 
@@ -122,3 +123,4 @@ def oneD_to_twoD(array):
     if len(array.shape) == 1: # 1D array
         array = array.reshape(-1, 1) # convert to 2D array
     return array
+

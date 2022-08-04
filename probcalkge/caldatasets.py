@@ -4,7 +4,7 @@ Utilities for loading datasets
 '''
 import os
 from collections import namedtuple
-from typing import Dict
+from typing import Dict, Iterable, Tuple
 
 import numpy as np
 import tensorflow as tf
@@ -17,6 +17,49 @@ if not os.environ.get('AMPLIGRAPH_DATA_HOME'):
     os.environ['AMPLIGRAPH_DATA_HOME'] = os.path.join(
         ROOT_DIR, 'ampligraph_datasets'
     )
+
+
+_Triple = Tuple[str, str, str]
+
+def is_contain_unseen(train_trps: Iterable[_Triple], valid_or_test:Iterable[_Triple]) -> bool:
+    '''
+    Check if there are triples in valid or test set containing unseen 
+    entities or relations that are not in the train set.
+    
+    Requires
+    --------
+        triples are in <head, rel, tail> format
+    '''
+    train_trps = np.array(train_trps)
+    valid_or_test = np.array(valid_or_test)
+    train_ents = set(train_trps[:, 0]).union(set(train_trps[:, 2]))
+    train_rels = set(train_trps[:, 1])
+    for trp in valid_or_test:
+        if (trp[0] not in train_ents) or (trp[2] not in train_ents) or (trp[1] not in train_rels):
+            return True
+    return False
+
+
+def filter_unseen(train_trps: Iterable[_Triple], valid_or_test:Iterable[_Triple]) -> np.ndarray:
+    '''
+    Filter out triples of valid or test set that contain unseen 
+    entities or relations that are not in the train set.
+    
+    Requires
+    --------
+        triples are in <head, rel, tail> format
+    '''
+    train_trps = np.array(train_trps)
+    valid_or_test = np.array(valid_or_test)
+    train_ents = set(train_trps[:, 0]).union(set(train_trps[:, 2]))
+    train_rels = set(train_trps[:, 1])
+    new_trps = []
+    for trp in valid_or_test:
+        if (trp[0] not in train_ents) or (trp[2] not in train_ents) or (trp[1] not in train_rels):
+            continue
+        new_trps.append(trp)
+    return np.array(new_trps)
+
 
 class DatasetWrapper:
     '''Adapter to wrap a dataset in order to fit our experiments
@@ -230,6 +273,25 @@ def get_nations():
                           tmp['test_labels'].astype(np.int32))
 
 
+def get_yago_et():
+    yagoet_path = os.environ['AMPLIGRAPH_DATA_HOME'] + os.sep + 'yago-et' + os.sep
+    tmp = load_dataset(yagoet_path)
+    return DatasetWrapper('YAGO-ET', tmp['train'].astype(np.int32), 
+                          tmp['valid'].astype(np.int32), 
+                          tmp['valid_labels'].astype(np.int32), 
+                          tmp['test'].astype(np.int32), 
+                          tmp['test_labels'].astype(np.int32))
+
+def get_dbpedia_et():
+    dbpediaet_path = os.environ['AMPLIGRAPH_DATA_HOME'] + os.sep + 'dbpedia-et' + os.sep
+    tmp = load_dataset(dbpediaet_path)
+    return DatasetWrapper('DBpedia-ET', tmp['train'].astype(np.int32), 
+                          tmp['valid'].astype(np.int32), 
+                          tmp['valid_labels'].astype(np.int32), 
+                          tmp['test'].astype(np.int32), 
+                          tmp['test_labels'].astype(np.int32))
+                          
+
 ExperimentDatasets = namedtuple('Datasets', [
     'fb13', 
     'wn18', 
@@ -238,6 +300,8 @@ ExperimentDatasets = namedtuple('Datasets', [
     'umls',
     'kinship',
     'nations',
+    'yago_et',
+    'dbpedia_et',
 ])
 
 def get_datasets() -> ExperimentDatasets:
@@ -249,11 +313,10 @@ def get_datasets() -> ExperimentDatasets:
     lst.append(get_umls())
     lst.append(get_kinship())
     lst.append(get_nations())
+    lst.append(get_yago_et())
+    lst.append(get_dbpedia_et())
     return ExperimentDatasets(*lst)
 
 if __name__ == '__main__':
-    get_dp50()
-    get_umls()
-    get_kinship()
-    get_nations()
+    get_datasets()
     
