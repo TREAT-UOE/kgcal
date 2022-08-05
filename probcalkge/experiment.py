@@ -77,6 +77,8 @@ class ExperimentResult:
         return self.results.to_dataframe()
     
     def report_html_file(self, filename='report.html'):
+        '''Render the experiment results and output an HTML file
+        '''
         html_content = self.to_frame().to_html()
         with open(filename, 'w') as f:
             f.write(html_content)
@@ -261,8 +263,19 @@ class Experiment:
         self.train_kges()
         return self.run_with_trained_kges()
 
+    def run_LP(self):
+        pass
 
 
+
+class LPExperimentResult:
+    def __init__(self) -> None:
+        pass
+
+
+    
+
+    
 
 
 if __name__ == '__main__':

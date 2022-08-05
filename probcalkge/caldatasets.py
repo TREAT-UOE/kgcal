@@ -276,7 +276,7 @@ def get_nations():
 def get_yago_et():
     yagoet_path = os.environ['AMPLIGRAPH_DATA_HOME'] + os.sep + 'yago-et' + os.sep
     tmp = load_dataset(yagoet_path)
-    return DatasetWrapper('YAGO-ET', tmp['train'].astype(np.int32), 
+    return DatasetWrapper('YAGO_ET', tmp['train'].astype(np.int32), 
                           tmp['valid'].astype(np.int32), 
                           tmp['valid_labels'].astype(np.int32), 
                           tmp['test'].astype(np.int32), 
@@ -285,7 +285,7 @@ def get_yago_et():
 def get_dbpedia_et():
     dbpediaet_path = os.environ['AMPLIGRAPH_DATA_HOME'] + os.sep + 'dbpedia-et' + os.sep
     tmp = load_dataset(dbpediaet_path)
-    return DatasetWrapper('DBpedia-ET', tmp['train'].astype(np.int32), 
+    return DatasetWrapper('DBpedia_ET', tmp['train'].astype(np.int32), 
                           tmp['valid'].astype(np.int32), 
                           tmp['valid_labels'].astype(np.int32), 
                           tmp['test'].astype(np.int32), 
