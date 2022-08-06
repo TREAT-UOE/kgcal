@@ -72,7 +72,7 @@ def normalise(x: np.ndarray):
 
     Parameters
     ----------
-    x (numpy.ndarray): array containing m samples with n-dimensions (m,n)
+    x (numpy.ndarray): array containing m samples with 1-dimensions (m,)
     
     Returns
     -------
@@ -80,10 +80,10 @@ def normalise(x: np.ndarray):
 
     Example
     -------
-    >>> normalise(np.array([1, 3, 5]))
-    array([0.11111111, 0.33333333, 0.55555556])
+    >>> normalise(np.array([1,3,5]))
+    array([-0.83711731,  1.16288269,  3.16288269])
     '''
-    return x / np.sum(x)
+    return x - np.mean(x) / np.std(x)
 
 
 def softmax(x: np.ndarray):

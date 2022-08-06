@@ -14,6 +14,7 @@ from netcal.scaling import TemperatureScaling
 from netcal.binning import ENIR
 
 from calutils import oneD_to_twoD
+from probcalkge.calutils import expit_probs
         
 
 # ===============================================================
@@ -63,7 +64,8 @@ class UncalCalibrator(Calibrator):
         pass
     
     def predict(self, uncal_probs):
-        return uncal_probs
+        # return uncal_probs
+        return expit_probs(uncal_probs)
 
 class PlattCalibrator(Calibrator):
     def __init__(self):

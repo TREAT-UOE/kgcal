@@ -14,7 +14,7 @@ from ampligraph.latent_features import EmbeddingModel
 
 from calmodels import Calibrator
 from caldatasets import DatasetWrapper
-from calutils import expit_probs, get_cls_name
+from calutils import expit_probs, get_cls_name, normalise
 
 dict = OrderedDict
 
@@ -220,13 +220,13 @@ class Experiment:
         '''
         print(f'training various calibrators for {get_cls_name(trained_kge)} on {ds.name} ...')
 
-        uncal_prob_valid = expit_probs(trained_kge.predict(ds.X_valid))
-        print(np.all(np.array(uncal_prob_valid)>0) and np.all(np.array(uncal_prob_valid)<1))
-        if not np.all(np.array(uncal_prob_valid)>0) and np.all(np.array(uncal_prob_valid)<1):
-            print(uncal_prob_valid[uncal_prob_valid <= 0])
-            print(uncal_prob_valid[uncal_prob_valid >= 1])
+        # uncal_prob_valid = expit_probs(trained_kge.predict(ds.X_valid))
+        # uncal_prob_valid = expit_probs(normalise(trained_kge.predict(ds.X_valid)))
+        uncal_prob_valid = trained_kge.predict(ds.X_valid)
 
-        uncal_prob_test = expit_probs(trained_kge.predict(ds.X_test))
+        # uncal_prob_test = expit_probs(trained_kge.predict(ds.X_test))
+        # uncal_prob_test = expit_probs(normalise(trained_kge.predict(ds.X_test)))
+        uncal_prob_test = trained_kge.predict(ds.X_test)
 
         cals_metrics = {}
         for cal in self.cals:
