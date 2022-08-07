@@ -155,7 +155,7 @@ class BetaCalibrator(Calibrator):
     
     def __init__(self):
         self.name = 'BetaCalibrator'
-        self._calibrator = BetaCalibration()
+        self._calibrator = BetaCalibration('ab')
     
     def fit(self, uncal_probs, y):
         self._calibrator.fit(uncal_probs, y)

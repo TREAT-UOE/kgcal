@@ -20,7 +20,7 @@ from netcal.binning import (
     ENIR
 )
 
-from calutils import oneD_to_twoD
+from calutils import oneD_to_twoD, handle_odd
         
 
 # ===============================================================
@@ -79,12 +79,12 @@ class PlattCalibrator(Calibrator):
 
     def fit(self, uncal_probs, y):
         uncal_probs = oneD_to_twoD(uncal_probs)
-        self._calibrator.fit(uncal_probs, y)
+        self._calibrator.fit(handle_odd(uncal_probs), y)
         return self
 
     def predict(self, uncal_probs):
         uncal_probs = oneD_to_twoD(uncal_probs)
-        return self._calibrator.transform(uncal_probs)
+        return self._calibrator.transform(handle_odd(uncal_probs))
     
 
 class IsotonicCalibrator(Calibrator):
@@ -93,11 +93,11 @@ class IsotonicCalibrator(Calibrator):
         self._calibrator = IsotonicRegression()
 
     def fit(self, uncal_probs, y):
-        self._calibrator.fit(uncal_probs, y)
+        self._calibrator.fit(handle_odd(uncal_probs), y)
         return self
         
     def predict(self, uncal_probs):
-        return self._calibrator.transform(uncal_probs)
+        return self._calibrator.transform(handle_odd(uncal_probs))
     
 
 class HistogramBinningCalibrator(Calibrator):
@@ -113,11 +113,11 @@ class HistogramBinningCalibrator(Calibrator):
         self._calibrator = HistogramBinning()  
 
     def fit(self, uncal_probs, true):
-        self._calibrator.fit(uncal_probs, true)
+        self._calibrator.fit(handle_odd(uncal_probs), true)
 
     # Fit based on predicted confidence
     def predict(self, uncal_probs):
-        return self._calibrator.transform(uncal_probs)
+        return self._calibrator.transform(handle_odd(uncal_probs))
     
 
 class BetaCalibrator(Calibrator):
@@ -127,11 +127,11 @@ class BetaCalibrator(Calibrator):
         self._calibrator = BetaCalibration()
     
     def fit(self, uncal_probs, y):
-        self._calibrator.fit(uncal_probs, y)
+        self._calibrator.fit(handle_odd(uncal_probs), y)
         return self
     
     def predict(self, uncal_probs):
-        return self._calibrator.transform(uncal_probs)
+        return self._calibrator.transform(handle_odd(uncal_probs))
 
 
 class TemperatureCalibrator(Calibrator):

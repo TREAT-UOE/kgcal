@@ -124,3 +124,14 @@ def oneD_to_twoD(array):
         array = array.reshape(-1, 1) # convert to 2D array
     return array
 
+def handle_odd(probs):
+    tmp = []
+    probs = np.array(probs).reshape([-1])
+    for i in probs:
+        if i < 0:
+            tmp.append(0)
+        elif i > 1:
+            tmp.append(1)
+        else:
+            tmp.append(i)
+    return np.array(tmp)
