@@ -26,14 +26,14 @@ KGEModels = namedtuple('KGEModels', [
     'convE',
 ])
 
-def get_kgemodels() -> KGEModels:
+def get_kgemodels(loss='nll') -> KGEModels:
     hyperparams = {
         'verbose': True,
 
         # taken from https://arxiv.org/abs/1912.10000
         'k': 100,
         'optimizer': 'adam',
-        'loss': 'nll',
+        'loss': loss,
         'eta': 20,
         'optimizer_params': {'lr': 1e-4},
         # 'epochs': 1000,
