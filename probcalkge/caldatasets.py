@@ -74,8 +74,10 @@ class DatasetWrapper:
 
     @property
     def stats(self) -> str:
-        '''Return number of train/valid/test'''
-        return len(self.X_train), len(self.X_valid), len(self.X_test)
+        '''Return number of train/valid/test/entities/relations'''
+        ents = set(self.X_train[:, 0]).union(self.X_train[:, 2])
+        rels = set(self.X_train[:, 1])
+        return len(self.X_train), len(self.X_valid), len(self.X_test), len(ents), len(rels)
 
 
 def get_fb13() -> DatasetWrapper:
