@@ -220,13 +220,13 @@ class Experiment:
         '''
         print(f'training various calibrators for {get_cls_name(trained_kge)} on {ds.name} ...')
 
-        # uncal_prob_valid = expit_probs(trained_kge.predict(ds.X_valid))
+        uncal_prob_valid = expit_probs(trained_kge.predict(ds.X_valid))
         # uncal_prob_valid = expit_probs(normalise(trained_kge.predict(ds.X_valid)))
-        uncal_prob_valid = trained_kge.predict(ds.X_valid)
+        # uncal_prob_valid = trained_kge.predict(ds.X_valid)
 
-        # uncal_prob_test = expit_probs(trained_kge.predict(ds.X_test))
+        uncal_prob_test = expit_probs(trained_kge.predict(ds.X_test))
         # uncal_prob_test = expit_probs(normalise(trained_kge.predict(ds.X_test)))
-        uncal_prob_test = trained_kge.predict(ds.X_test)
+        # uncal_prob_test = trained_kge.predict(ds.X_test)
 
         cals_metrics = {}
         for cal in self.cals:
