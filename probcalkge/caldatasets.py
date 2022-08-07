@@ -104,6 +104,7 @@ def _load_yago39():
     with open(yago_path + 'train_triple2id.txt', 'r') as f:
         lines = f.readlines()
         data['train'] = np.array([line.strip().split() for line in lines[1:]])
+    data['train'][:, [1, 2]] = data['train'][:, [2, 1]]  # adjust the columns of rel and tail for yago dataset
     train_entities = set(data['train'][:, 0]).union(set(data['train'][:, 2]))
     # print(len(train_entities))
 
@@ -114,8 +115,8 @@ def _load_yago39():
             triple = line.strip().split()
             if (triple[0] in train_entities) and (triple[2] in train_entities):
                 tmp.append(triple)
-        data['valid'] = np.array(tmp)
-        data['valid_labels'] = np.ones(len(tmp))
+    data['valid'] = np.array(tmp)
+    data['valid_labels'] = np.ones(len(tmp))
 
     with open(yago_path + 'valid_triple2id_negative.txt', 'r') as f:
         lines = f.readlines()
@@ -124,8 +125,10 @@ def _load_yago39():
             triple = line.strip().split()
             if (triple[0] in train_entities) and (triple[2] in train_entities):
                 tmp.append(triple)
-        data['valid'] = np.concatenate([data['valid'], np.array(tmp)])
-        data['valid_labels'] = np.concatenate([data['valid_labels'], np.zeros(len(tmp))])
+    data['valid'] = np.concatenate([data['valid'], np.array(tmp)])
+    data['valid_labels'] = np.concatenate([data['valid_labels'], np.zeros(len(tmp))])
+    
+    data['valid'][:, [1, 2]] = data['valid'][:, [2, 1]]
 
     with open(yago_path + 'test_triple2id_positive.txt', 'r') as f:
         lines = f.readlines()
@@ -134,8 +137,8 @@ def _load_yago39():
             triple = line.strip().split()
             if (triple[0] in train_entities) and (triple[2] in train_entities):
                 tmp.append(triple)
-        data['test'] = np.array(tmp)
-        data['test_labels'] = np.ones(len(tmp))
+    data['test'] = np.array(tmp)
+    data['test_labels'] = np.ones(len(tmp))
 
     with open(yago_path + 'test_triple2id_negative.txt', 'r') as f:
         lines = f.readlines()
@@ -144,8 +147,10 @@ def _load_yago39():
             triple = line.strip().split()
             if (triple[0] in train_entities) and (triple[2] in train_entities):
                 tmp.append(triple)
-        data['test'] = np.concatenate([data['test'], np.array(tmp)])
-        data['test_labels'] = np.concatenate([data['test_labels'], np.zeros(len(tmp))])
+    data['test'] = np.concatenate([data['test'], np.array(tmp)])
+    data['test_labels'] = np.concatenate([data['test_labels'], np.zeros(len(tmp))])
+
+    data['test'][:, [1, 2]] = data['test'][:, [2, 1]]
 
     return data
 

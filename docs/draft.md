@@ -2,40 +2,69 @@
 
 ## Introduction
 
+motivation
+
+knowledge graph
+
+probabilistic knowledeg graph
+
+KGE cal:  KV, benefit of calibrated probs
 
 
-1. We reprecated and extended the previous experiments. We confirmed their conclusion but also pointed out the potential flaws of previous works:
-    - Calibration techqniues like Platt Scaling, Isotonic Regression can effectively convert embedding scores into good probabilities.
-    - However, converting embedding scores via expit transform (simply pss the scores through a sigmoid layer) is not a good idea. Arguably, some may even refuse to recognise these transformed values as probabilities. A better idea is to convert the embedding scores to probabilities directly via platt scaling or isontonic regression, instead of expit transform.
-2. We also found a more useful rule of thumb about how to choose calibration techqniue: when we have a large set of held-out data (over 10 thousand triples), we should definitely choose binning-based calibration techniques, such as Isonotic Regression, otherwise scaling-based techqniues, such as Platt Scaling, would be more suitable. 
+
+### Related Workds
+
+KGE
+
+Calibration
+
+KGE Cal
+
+There are much more calibration techniques proposed these years. We testted more calibration techniques for these KGE modles on more datasets. During the experiments, we also have other interesting findings. We found that not all probabilities can be obtained via expit transform, What's more, we also found and confirmed some hints for selection of calibration techniques. .
+
+### Main Findings
+
+1. We reprecated and extended the previous experiments. We confirmed their conclusion that KG Embedding models are uncalibrated, and techniques like Platt Scaling, Isotonic Regression, and others can calibrated the KGE models, producing good probabilities.
+2. We also analysed the reason of uncalibrated probabilities, and pointed out the potential flaws of previous works: it is inappropriate to recognise converting expit transformed values (simply pass the embedding scores through a sigmoid layer) as probabilities. Whether we can obtain probabilities via expit transform depends on the scoring function and the loss fuction. This also indicates that we'd better convert the embedding scores to probabilities directly via platt scaling or isontonic regression, instead of expit transform.
+3. We also found a more useful rule of thumb about how to choose calibration techqniue: when we have a large set of held-out data (over 10 thousand triples), we should definitely choose binning-based calibration techniques, such as Isonotic Regression, otherwise scaling-based techqniues, such as Platt Scaling, would be more suitable. 
 
 
-## From Embedding Scores to Probabilities
+## Preliminaries
 
+define KG
+
+define KGE
+
+define cal
+
+define KGE cal
+
+
+## Experiment Setup
+
+In our experiment, we trained 4 typical KE embedding models, TransE, ComplEx, DistMult, and HoLE on 7 datasets: FB13k, WN11, YAGO39, DBpedia50, Nations, Kinship, UMLS. Each dataset is splited into 3 subset for train, valid, and test. Note that the valid and test set of FB13, WN11 and YAGO39 have ground truth negative samples, while the other 4 don't have. Thus, we generate synthetic negative samples via the corrption and local closed world assumtion. Statistics of the datasets are summarisd in table 1.
+
+|            |   train |   valid |   test |   ents |   rels |
+|:-----------|--------:|--------:|-------:|-------:|-------:|
+| FB13k      |  316232 |   11816 |  47464 |  75043 |     13 |
+| WN11       |  110361 |    4877 |  19706 |  38194 |     11 |
+| YAGO39     |  354994 |   18471 |  18507 |  37612 |     37 |
+| DBpedia50  |   32388 |     246 |   4196 |  24624 |    351 |
+| UMLS       |    5216 |    1304 |   1322 |    135 |     46 |
+| Kinship    |    8544 |    2136 |   2148 |    104 |     25 |
+| Nations    |    1592 |     398 |    402 |     14 |     55 |
+
+We used the implementation of Knowledge Graph Embedding Models from AmpliGraph, and used implementation calibration techniques from NetCal.
 
 ## Results
 
-In our experiment, we train 4 typical KE embedding models, TransE, ComplEx, DistMult, and HoLE on 7 datasets: FB13k, WN11, YAGO39, DBpedia50, Nations, Kinship, UMLS. Each dataset is splited into 3 subset for train, valid, and test. Note that the valid and test set of FB13, WN11 and YAGO39 have ground truth negative samples, while the other 4 don't have. Thus, we generate synthetic negative samples via the corrption and local closed world assumtion. Statistics of the datasets are summarisd in table 1.
-
-|           | train  | valid | test  |
-|-----------|--------|-------|-------|
-| FB13k     | 316232 | 11816 | 47464 |
-| WN11      | 110361 | 4877  | 19706 |
-| YAGO39    | 354994 | 18474 | 18514 |
-| DBpedia50 | 32388  | 246   | 4196  |
-| UMLS      | 5216   | 1304  | 1322  |
-| Kinship   | 8544   | 2136  | 2148  |
-| Nations   | 1592   | 398   | 402   |
-
-We run calibration techniques for every KG Embedding models. During experiment, we train the KGE models only use the train set, and train the calibration model using valid set. In diagram 1, the calibration curves illustrate that all calibration techqniues produced better-calibrated probabilities than those obtained via expit transform.
+We run 4 calibration techniques: Platt Scaling, Isotonic Regression, and two recently developed ones, Beta Calibration, and Histogram Binning, for every KG Embedding models. During experiment, we trained the KGE models only use the train set, and train the calibration model using valid set. In diagram 1, the calibration curves illustrate that the KG Embedding models are more or less uncalibrated, and almost all calibration techqniues produced better-calibrated probabilities than those obtained via expit transform, which are recognised as uncalibrated probabilities.
 
 ![diagram 1](curves2.png)
 
-We can see that binning-based calibration performs better in general. We also noticed that binning-based methods dominate in FB13k, WN11 and YAGO39. We hypothesise that perhaps that's because there are more data in these 3 datasets. Previous work also suggested that binnig-based methods tend to overfit, expecially in smaller datasets. Thus, we take these 3 datasets, and gradaully shrink the size of valid set by randomly samping k%, and compare the number of winning between binning-based and scaling-based methods. 
 
-![Diagram 2](shrink2.png)
+We use these probabilities to perform triple calissfication task. Diagram 3 shows that the calibrated probabilities can serve as a good indicator to classify the positve triples from the negative ones. It achieve STOA results as the literature standard of per-relation threshold. 
 
-Diagram 2 shows that as the size of the dataset shrink, the winning count of binning-based methods decreases while caling-based method increases, i.e., scaling-based calibration start to gain better calibration peroformance than binning-based techqniue in some cases.
 
 | FB13k     | Uncal | Platt | Isot  | beta  | histbin |
 |-----------|-------|-------|-------|-------|---------|
@@ -94,11 +123,24 @@ Diagram 2 shows that as the size of the dataset shrink, the winning count of bin
 
 
 
-We use these probabilities to perform triple calissfication task. Diagram 3 shows that the probabilities can serve as a good indicator to classify the positve triples from the negative ones. It achieve STOA results as the literature standard of per-relation threshold. 
+
+
+However, the devil is in the detials. We noted that the accuracy of uncalibrated probabilities of TransE in all dataset got nearly 50%, which means no better than random guess. By inspecting the calibration curves of TransE uncalibrated probabilities, we could see that none of these values are greater than 0.5. Therefore, when using 0.5 as a threshold, we classified all triples as negatives, leading to the results similar to random guesses! We plot the histograms of "uncalibrated probabilities" of TransE. Why this happened? Because these uncalibrated probabilities were obtained by applying a sigmoid function on the embedding scores, and we noticed that the implementation of TransE in AmpliGraph adopted such a loss function:
+$$
+f_{TransE}=-||(\mathbf{e}_s + \mathbf{r}_p) - \mathbf{e}_o||_n
+$$
+Hence $f_{TransE}( s, p, o ) \in [-\infty ,0] $, and thus $\sigma\big(f_{TransE}( s, p, o )\big) \in [0, 0.5]$. Though "What is probability" is more or less a philosophical question, I believe $\sigma\big(f_{TransE}( s, p, o )\big)$ can hardly be recognised as probabilities, whether calibrated or uncalibrated. 
 
 
 
-we observe that the uncalibrated probabilities obtained by expit transform are hard to be recognised as probabilities.
+
+We observed that binning-based calibration performs better in general. We also noticed that binning-based methods dominated only in FB13k, WN11 and YAGO39. We hypothesised that perhaps that's because there are more data in these 3 datasets. Previous work also suggested that binnig-based methods tend to overfit, expecially in smaller datasets. Thus, we take these 3 datasets, and gradaully shrink the size of valid set by randomly samping k%, and compare the number of winning between binning-based and scaling-based methods. 
+
+![Diagram 2](shrink2.png)
+
+Diagram 2 shows that as the size of the dataset shrink, the winning count of binning-based methods decreases while caling-based method increases, i.e., scaling-based calibration start to gain better calibration peroformance than binning-based techqniue in some cases.
+
+
 
 
 ## Discussion
