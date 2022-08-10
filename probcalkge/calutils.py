@@ -129,9 +129,9 @@ def handle_odd(probs):
     probs = np.array(probs).reshape([-1])
     for i in probs:
         if i < 0:
-            tmp.append(0)
+            tmp.append(0.001)
         elif i > 1:
-            tmp.append(1)
+            tmp.append(0.999)
         else:
             tmp.append(i)
     return np.array(tmp)

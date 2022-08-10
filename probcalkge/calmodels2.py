@@ -141,11 +141,12 @@ class TemperatureCalibrator(Calibrator):
         self._calibrator = TemperatureScaling()
     
     def fit(self, uncal_probs, y):
-        self._calibrator.fit(np.array(uncal_probs), np.array(y))
+        handle_odd(np.array(uncal_probs))
+        self._calibrator.fit(handle_odd(np.array(uncal_probs)), np.array(y))
         return self
 
     def predict(self, uncal_probs):
-        return self._calibrator.transform(np.array(uncal_probs))
+        return self._calibrator.transform(handle_odd(np.array(uncal_probs)))
 
 
 class ENIRCalibrator(Calibrator):
