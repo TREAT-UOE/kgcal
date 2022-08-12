@@ -33,7 +33,7 @@ kges = get_kgemodels()
 
 exp = Experiment(
     cals=[cals.uncal, cals.platt, cals.isot, cals.histbin, cals.beta], 
-    datasets=[ds.yago_et, ds.dbpedia_et], 
+    datasets=[ds.fb13, ds.wn18, ds.yago39, ds.dbpedia_et,ds.kinship, ds.umls], 
     kges=[kges.transE, kges.complEx, kges.distMult, kges.hoLE], 
     metrics=[brier_score, negative_log_loss, ks_error, ece]
     )

@@ -191,8 +191,8 @@ class Experiment:
                 dsname, kgename =  fname_pat.findall(fname)[0]
                 self.trained_kges.setdefault(dsname, dict())
                 self.trained_kges[dsname][kgename] = restore_model(os.path.join(save_dir, fname))
-        print('Loaded models:')
-        pprint(self.trained_kges)
+        print('Loaded trained KG embedding models.')
+        # pprint(self.trained_kges)
 
         
     def train_kges(self):
@@ -254,7 +254,7 @@ class Experiment:
             res[ds.name] = {}
             for kgename, kgemodel in self.trained_kges[ds.name].items():
                 res[ds.name][kgename] = self._train_cal_and_eval(kgemodel, ds)
-        print(res)
+        # print(res)
         return ExperimentResult(experiment=self, results=res)
         
     def run(self) -> ExperimentResult:
