@@ -4,7 +4,7 @@ Some calibration metrics.
 from collections.abc import Iterable
 import numpy as np
 
-from sklearn.metrics import brier_score_loss, log_loss
+from sklearn.metrics import brier_score_loss, log_loss, accuracy_score
 from sklearn.calibration import CalibrationDisplay
 from netcal.metrics import ECE
 
@@ -40,3 +40,8 @@ def ece(y_true, y_prob) -> float:
 def cal_curve(y_true, y_prob, n_bins=5):
     '''Plot a calibration curve'''
     return CalibrationDisplay.from_predictions(y_true, y_prob, n_bins=n_bins)
+
+def accuracy(y_true, y_prob) -> float:
+    '''classification accuracy ration (not a calibration metrics)'''
+    pred = y_prob > 0.5
+    return accuracy_score(y_true, pred)
