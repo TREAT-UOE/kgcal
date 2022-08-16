@@ -45,3 +45,4 @@ def accuracy(y_true, y_prob) -> float:
     '''classification accuracy ration (not a calibration metrics)'''
     pred = y_prob > 0.5
     return accuracy_score(y_true, pred)
+    
