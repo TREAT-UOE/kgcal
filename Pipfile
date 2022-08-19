@@ -12,6 +12,8 @@ jupyter = "*"
 xarray = "*"
 pandas = "*"
 netcal = "*"
+pykeen = "*"
+seaborn = "*"
 
 [dev-packages]
 

@@ -6,3 +6,5 @@ jupyter
 xarray
 pandas
 netcal
+seaborn
+pykeen
