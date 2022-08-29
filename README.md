@@ -17,4 +17,4 @@ pip install -r requirments.txt
 
 ## Experiment
 
-You could run the jupyter notebooks in `notebooks` to conduct experiments
+You could run the jupyter notebooks in the `experiments` folder to conduct experiments.
